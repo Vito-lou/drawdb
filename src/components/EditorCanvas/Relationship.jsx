@@ -1,11 +1,11 @@
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Cardinality } from "../../data/constants";
 import { calcPath } from "../../utils/calcPath";
 import { useTables, useSettings } from "../../hooks";
 
 export default function Relationship({ data }) {
   const { settings } = useSettings();
-  const { tables } = useTables();
+  const { tables, deleteRelationship } = useTables();
   const pathRef = useRef();
 
   let cardinalityStart = "1";
@@ -46,9 +46,32 @@ export default function Relationship({ data }) {
     cardinalityEndX = point2.x;
     cardinalityEndY = point2.y;
   }
+  const [isSelected, setIsSelected] = useState(false);
 
+  // 点击连线事件处理器
+  const handleLineClick = () => {
+    setIsSelected(!isSelected);
+  };
+
+  // 监听键盘事件以便删除选中的连线
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // 检查是否按下了删除键，并且当前连线是选中状态
+      if (event.key === 'Backspace' && isSelected) {
+        deleteRelationship(data.id)
+      }
+    };
+
+    // 添加键盘事件监听器
+    document.addEventListener('keydown', handleKeyDown);
+
+    // 清除事件监听器
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isSelected, deleteRelationship, data.id]);
   return (
-    <g className="select-none group">
+    <g className="select-none group" onClick={handleLineClick}>
       <path
         ref={pathRef}
         d={calcPath(
@@ -70,6 +93,7 @@ export default function Relationship({ data }) {
         fill="none"
         strokeWidth={2}
         cursor="pointer"
+
       />
       {pathRef.current && settings.showCardinality && (
         <>
